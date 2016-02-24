@@ -11,19 +11,20 @@ mvn clean compile assembly:single
 ```
 
 ### Testing
-#### Units tests (Not enough time)
+#### Units tests (Not enough time to create these)
 * Would run using:
 ```
 mvn test
 ```
+
 #### Functional Tests
-* Output folders are created using the date the program was run.
+* Output folders are created using the date the program was run
 * Tests are located at src/test/files along with output files
 
 ## Approach
 ### Create temp files for users containing all paths (non-unique)
 * Read in log file line by line
-* For each line check working directory to see if the user's file exists
+* For each user check working directory to see if the user's file exists (hash the user string)
 * If not, create a file and insert the path
 * If yes, write the path to the document
 
@@ -56,8 +57,7 @@ mvn test
 * Final Performance: O(N * K)
 
 ### Assumptions on Dataset Properties
-* There aren't billions of users or beyond what the file system can hold
-* We don't run out of integers to hash to
+* There aren't billions of users or beyond what the file system can hold.
 * n isn't so large that it overflows memory. This cannot always be guaranteed.
 
 ### Improvements
@@ -65,17 +65,19 @@ mvn test
     * We want to hold the maximum allowed file handles in the program possible.
     * This can probably be achieved using a least recently used algorithm.
         * Removes the least recently accessed file handle and replaces it with the file that was just opened.
+    * Right now FileUtils by Apache is being used to open/write/close file in disk for every single line. This is extremely expensive.
 * Writing fewer files to the file system.
 * More command line options for output folders, input multiple log files
+* Create hashing function
 
 ### Alternative Approaches
 * MapReduce
     * Works better across multiple nodes. Distributed system approach.
 * Indexing
     * Implement something similar to Lucene by creating a reverse index of number of paths as the key and the users that have that number of paths.
-    * Problem: 
+    * Problem: Still need to store user information.
 * Use serialized HashMaps
     * Key = hashed user key, Value = Set of user paths
     * Split keys into 100 maps since hashes are evenly distributed
     * Max number of maps in memory possible. Once some memory limit is reached, serialize least recently used and write to memory.
-    * Problem: If number of paths for a group of users is too large to fit in hash this won't work.
+    * Problem: If number of paths for a group of users is too large to fit in hashtable on memory this won't work.
