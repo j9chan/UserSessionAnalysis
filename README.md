@@ -23,61 +23,35 @@ mvn test
 
 ## Approach
 ### Create temp files for users containing all paths (non-unique)
-* Read in log file line by line
-* For each user check working directory to see if the user's file exists (hash the user string)
-* If not, create a file and insert the path
-* If yes, write the path to the document
+* Chunks original input file into 100 smaller files based on user.hashCode() % 100 (creates an even distribution for each file)
 
 ### Find out the number of unique paths for all users
-* For each user file, read the paths into a map
-* If the path exists, skip
-* If not increment counter i
-* If i > n then move on to the next user file (n is number entered on the command line)
-* If i < n then go to next user
-* If i = n then print the user
+* For each of the 100 files read into a map
+* Add to the map if the path was not seen before
+* Set the corresponding set for a user to 0 if the number of paths for a user exceeds n
 
 ### Why This Approach was Chosen
-* Linear time solution (not counting opening and closing files on disk)
-* Very little stored in memory. Maybe only file handles if we want to optimize.
+* Linear time solution
+* Less IO overhead since buffers can be kept open
 
 ### Resource Requirements
 * Memory requirements: O(n) (n is the number entered on the command line)
-* Space requirement: Hold m files on the system (m = number of users)
+* Space requirement: Hold 100 extra temp files so O(N) more data
 
 ### Performance
-* N = number of lines in original file, K = time to open/close files on disk
-* Creating temp files
-    * Reading the log file: O(N)
-    * Creating/opening/closing temp files on system: O(K)
-    * Conclusion: O(N * K)
-* Reading unique paths for each user
-    * Open file for each user: O(K)
-    * At most read all N lines again: O(N)
-    * Conclusion: O(N * K)
-* Final Performance: O(N * K)
+* N = number of lines in original file
+* Creating temp files : O(N)
+* Reading unique paths for each user: O(N)
+* Final Performance: O(N)
 
 ### Assumptions on Dataset Properties
-* There aren't billions of users or beyond what the file system can hold.
-* n isn't so large that it overflows memory. This cannot always be guaranteed.
+* n isn't so large that holding all the unique paths for one user will overflow memory
 
 ### Improvements
-* Opening and closing files for each line in the dataset is expensive
-    * We want to hold the maximum allowed file handles in the program possible.
-    * This can probably be achieved using a least recently used algorithm.
-        * Removes the least recently accessed file handle and replaces it with the file that was just opened.
-    * Right now FileUtils by Apache is being used to open/write/close file in disk for every single line. This is extremely expensive.
-* Writing fewer files to the file system.
-* More command line options for output folders, input multiple log files
-* Create hashing function
+* Generalize for really large files since the current 100 files may overflow memory if the original file was extremely large
+    * Divide original file into manageable chunks
+    * Will end up with lots of files stored on disk
 
 ### Alternative Approaches
-* MapReduce
-    * Works better across multiple nodes. Distributed system approach.
-* Indexing
-    * Implement something similar to Lucene by creating a reverse index of number of paths as the key and the users that have that number of paths.
-    * Problem: Still need to store user information.
-* Use serialized HashMaps
-    * Key = hashed user key, Value = Set of user paths
-    * Split keys into 100 maps since hashes are evenly distributed
-    * Max number of maps in memory possible. Once some memory limit is reached, serialize least recently used and write to memory.
-    * Problem: If number of paths for a group of users is too large to fit in hashtable on memory this won't work.
+* Each user has a file with all the paths
+    * Too much IO overhead. Extremely slow.
